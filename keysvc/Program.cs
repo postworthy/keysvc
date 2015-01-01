@@ -61,6 +61,7 @@ namespace keysvc
                             while (!active)
                             {
                                 int bytesread = s.Read(readBuffer, 0, readBuffer.Length);
+                                if (bytesread == 0) throw new Exception("");
                                 while (bytesread > 0)
                                 {
                                     msg.Append(ASCIIEncoding.UTF8.GetString(readBuffer).Replace("\n","").Replace("\0",""));
